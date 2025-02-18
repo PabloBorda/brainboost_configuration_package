@@ -1,0 +1,8 @@
+/.mypy_cache
+/.pytest_cache
+/brainboost_configuration_package.egg-info
+/build
+/context
+/context.py
+/dist
+/venv
