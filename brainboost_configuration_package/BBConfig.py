@@ -174,9 +174,12 @@ class BBConfig:
             try:
                 import redis
                 # Obtain Redis connection parameters from the loaded configuration.
+                cls.add_if_not_exists(k='server_redis_ip',value=redis_ip)
+                cls.add_if_not_exists(k='server_redis_port',value=redis_port)
+
                 cls._conf
-                redis_server_ip = redis_ip
-                redis_server_port = int(redis_port)
+                redis_server_ip = cls.get(k='server_redis_ip')
+                redis_server_port = int(cls.get(k='server_redis_port'))
                 r = redis.Redis(host=redis_server_ip, port=redis_server_port, db=0)
                 r.set("BBConfig:global_config", json.dumps(cls._conf))
                 print("Configuration uploaded to Redis under key 'BBConfig:global_config' using Redis at {}:{}.".format(redis_server_ip, redis_server_port))
