@@ -157,7 +157,8 @@ class BBConfig:
             print(f"Warning: Key '{k}' already exists in the configuration. No changes were made.")
     
     @classmethod
-    def configure(cls, custom_config_path, upload_to_redis=False):
+    def configure(cls, custom_config_path, upload_to_redis=False,redis_ip='127.0.0.1',redis_port='6379'):
+
         if not os.path.isfile(custom_config_path):
             raise FileNotFoundError(f"Custom configuration file '{custom_config_path}' not found.")
         
@@ -173,8 +174,9 @@ class BBConfig:
             try:
                 import redis
                 # Obtain Redis connection parameters from the loaded configuration.
-                redis_server_ip = cls._conf.get("redis_server_ip", "localhost")
-                redis_server_port = int(cls._conf.get("redis_server_port", "6379"))
+                cls._conf
+                redis_server_ip = redis_ip
+                redis_server_port = int(redis_port)
                 r = redis.Redis(host=redis_server_ip, port=redis_server_port, db=0)
                 r.set("BBConfig:global_config", json.dumps(cls._conf))
                 print("Configuration uploaded to Redis under key 'BBConfig:global_config' using Redis at {}:{}.".format(redis_server_ip, redis_server_port))
