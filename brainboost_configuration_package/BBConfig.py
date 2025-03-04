@@ -3,25 +3,38 @@
 import re
 import os
 import json
+import urllib.request  # New import for URL handling
 
 class BBConfig:
     
     _conf = {}
     _resolved_conf = {}
     _overrides = {}  # Dictionary to store overridden values in-memory
-    _config_file = '/brainboost/global.config'  # Default configuration file path
+    # Change the default configuration file path to the URL
+    _config_file = 'https://storage.googleapis.com/brainboost_subjective_cloud_storage/global.config'
     _upload_to_redis = False  # New flag to indicate whether to use Redis for global configuration
     
     @classmethod
     def read_config(cls):
         cls._conf = {}
         content = ''
-        try:
-            with open(cls._config_file) as f:
-                content = f.readlines()
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Configuration file '{cls._config_file}' not found.")
+        # If _config_file is a URL, download its content.
+        if cls._config_file.startswith("http://") or cls._config_file.startswith("https://"):
+            try:
+                with urllib.request.urlopen(cls._config_file) as response:
+                    # Decode the response content and split into lines
+                    content = response.read().decode('utf-8').splitlines()
+            except Exception as e:
+                raise Exception(f"Error downloading configuration from '{cls._config_file}': {str(e)}")
+        else:
+            # Otherwise, read from the local file
+            try:
+                with open(cls._config_file) as f:
+                    content = f.readlines()
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Configuration file '{cls._config_file}' not found.")
         
+        # Process the content line by line
         for l in content:
             l = l.strip()
             if len(l) > 3 and not l.startswith('#'):
@@ -157,7 +170,7 @@ class BBConfig:
             print(f"Warning: Key '{k}' already exists in the configuration. No changes were made.")
     
     @classmethod
-    def configure(cls, custom_config_path, upload_to_redis=False,redis_ip='127.0.0.1',redis_port='6379'):
+    def configure(cls, custom_config_path, upload_to_redis=False, redis_ip='127.0.0.1', redis_port='6379'):
 
         if not os.path.isfile(custom_config_path):
             raise FileNotFoundError(f"Custom configuration file '{custom_config_path}' not found.")
@@ -174,10 +187,9 @@ class BBConfig:
             try:
                 import redis
                 # Obtain Redis connection parameters from the loaded configuration.
-                cls.add_if_not_exists(k='server_redis_ip',value=redis_ip)
-                cls.add_if_not_exists(k='server_redis_port',value=redis_port)
+                cls.add_if_not_exists(k='server_redis_ip', value=redis_ip)
+                cls.add_if_not_exists(k='server_redis_port', value=redis_port)
 
-                cls._conf
                 redis_server_ip = cls.get(k='server_redis_ip')
                 redis_server_port = int(cls.get(k='server_redis_port'))
                 r = redis.Redis(host=redis_server_ip, port=redis_server_port, db=0)
@@ -185,4 +197,3 @@ class BBConfig:
                 print("Configuration uploaded to Redis under key 'BBConfig:global_config' using Redis at {}:{}.".format(redis_server_ip, redis_server_port))
             except Exception as e:
                 raise Exception("Failed to upload configuration to Redis: " + str(e))
-# End of BBConfig.py
