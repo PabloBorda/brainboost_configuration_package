@@ -21,9 +21,13 @@ class BBConfig:
         # If _config_file is a URL, download its content.
         if cls._config_file.startswith("http://") or cls._config_file.startswith("https://"):
             try:
-                with urllib.request.urlopen(cls._config_file) as response:
-                    # Decode the response content and split into lines
+                req = urllib.request.Request(
+                    cls._config_file,
+                    headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64)'}
+                )
+                with urllib.request.urlopen(req) as response:
                     content = response.read().decode('utf-8').splitlines()
+
             except Exception as e:
                 raise Exception(f"Error downloading configuration from '{cls._config_file}': {str(e)}")
         else:
